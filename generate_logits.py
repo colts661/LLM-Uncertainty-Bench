@@ -16,7 +16,8 @@ few_shot_exp_ids = {
     "HellaSwag": [1, 3, 5, 7, 9],
     "CosmosQA": [1, 3, 5, 7, 9],
     "Halu-OpenDialKG": [5, 7, 9],
-    "Halu-CNN/DailyMail": [9]
+    "Halu-CNN/DailyMail": [9],
+    "Emotion": [1, 3, 5, 7, 9],
 }
 
 options = ["Answer: A", "Answer: B", "Answer: C", "Answer: D", "Answer: E", "Answer: F"]
@@ -81,6 +82,8 @@ def format_example(example, prompt, with_answer=False):
     # Document Summarization
     elif example["source"] == "Halu-CNN/DailyMail":
         prompt += "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+    elif example["source"] == "Emotion":
+    	prompt += "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
     else:
         raise NotImplementedError("Not supported dataset.")
     for k, v in example["choices"].items():
@@ -185,7 +188,7 @@ def main(args):
     if args.file != "xxx.json":
         all_data_files = [args.file]
     else:
-        all_data_files = ['mmlu_10k.json', 'cosmosqa_10k.json', 'hellaswag_10k.json', 'halu_dialogue.json', "halu_summarization.json"]
+        all_data_files = ['mmlu_10k.json', 'cosmosqa_10k.json', 'hellaswag_10k.json', 'halu_dialogue.json', "halu_summarization.json", 'emotion_10k_4.json']
     print(all_data_files)
     
     tokenizer, model = load_model(args)

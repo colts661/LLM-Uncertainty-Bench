@@ -297,7 +297,7 @@ if __name__ == "__main__":
     parser.add_argument("--logits_data_dir", type=str, default="outputs",
                         help="Directory where logits data are stored.")
     parser.add_argument("--data_names", nargs='*', 
-                        default=['mmlu_10k', 'cosmosqa_10k', 'hellaswag_10k', 'halu_dialogue', 'halu_summarization'], 
+                        default=['mmlu_10k', 'cosmosqa_10k', 'hellaswag_10k', 'halu_dialogue', 'halu_summarization', 'emotion_10k_4'], 
                         help='List of datasets to be evaluated. If empty, all datasets are evaluated.')
     parser.add_argument("--prompt_methods", nargs='*', 
                         default=['base', 'shared', 'task'], 

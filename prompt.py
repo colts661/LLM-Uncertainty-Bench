@@ -16,7 +16,8 @@ task_few_prompt = '''
 "HellaSwag": "Below are some examples of multiple-choice questions about commonsense natural language inference. For each question, there is a given context and the answer is the option that most likely follows the context.\n\n",
 "CosmosQA": "Below are some examples of multiple-choice questions about reading comprehension. Each question should be answered based on the given context and commonsense reasoning when necessary.\n\n",
 "Halu-OpenDialKG": "Below are some examples of multiple-choice questions about dialogue response selection. For each question, the answer is the option that represents the most suitable response for the given dialogue history, without hallucination and non-factual information.\n\n",
-"Halu-CNN/DailyMail": "Below are some examples of multiple-choice questions about document summarization. For each question, the answer is the option that accurately summarizes the given document without hallucination and non-factual information.\n\n"
+"Halu-CNN/DailyMail": "Below are some examples of multiple-choice questions about document summarization. For each question, the answer is the option that accurately summarizes the given document without hallucination and non-factual information.\n\n",
+"Emotion": "Below are some examples of multiple-choice questions about sentiment classification. For each question, the answer is the option that accurately follows the sentiment of the conversation.\n\n"
 }
 '''
 
