@@ -35,9 +35,7 @@ sentencepiece==0.1.99
 six==1.16.0
 tiktoken==0.5.1
 tokenizers==0.14.1
-torch==1.13.1
-torchaudio==0.13.1
-torchvision==0.14.1
+torch==2.0.0
 tqdm==4.66.1
 transformers==4.35.0
 transformers-stream-generator==0.0.4
