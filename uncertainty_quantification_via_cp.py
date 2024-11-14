@@ -297,7 +297,7 @@ if __name__ == "__main__":
     parser.add_argument("--logits_data_dir", type=str, default="outputs",
                         help="Directory where logits data are stored.")
     parser.add_argument("--data_names", nargs='*', 
-                        default=['mmlu_10k', 'cosmosqa_10k', 'hellaswag_10k', 'halu_dialogue', 'halu_summarization', 'emotion_10k_4'], 
+                        default=['mmlu_10k', 'cosmosqa_10k', 'hellaswag_10k', 'halu_dialogue', 'halu_summarization'], 
                         help='List of datasets to be evaluated. If empty, all datasets are evaluated.')
     parser.add_argument("--prompt_methods", nargs='*', 
                         default=['base', 'shared', 'task'], 
@@ -309,6 +309,11 @@ if __name__ == "__main__":
                         help="The ratio of data to be used as the calibration data.")
     parser.add_argument("--alpha", type=float, default=0.1,
                         help="The error rate parameter.")
+    parser.add_argument("--calc-emotion", type=bool, default=False,
+                        help="Calc CP on EmotionQA.")
     args = parser.parse_args()
+    
+    if args.calc_emotion:
+        args.data_names.append('emotion_10k_4')
 
     main(args)
