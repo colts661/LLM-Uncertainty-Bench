@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from transformers import AutoTokenizer, LlamaForCausalLM
+from datasets import load_dataset
 import torch
 from collections import Counter
 import pickle, re, os, time, random
@@ -8,20 +9,15 @@ import json
 import argparse
 
 
+def load_data(data_file):
+    data = json.load(open(data_file, "r"))
+    return data
+
+
 def get_data(dataset_name='dair-ai/emotion'):
-    if dataset_name=='dair-ai/emotion':
-        return (load_dataset(dataset_name)['train'], load_dataset(dataset_name)['test'])
-    elif dataset_name=='glue':
-        temp_dataset = load_dataset(dataset_name, 'cola')
-        return (temp_dataset['train'], temp_dataset['validation'])
-    elif dataset_name=='financial_phrasebank':
-        temp_dataset = load_dataset(dataset_name, 'sentences_allagree')['train']
-        temp_dataset = temp_dataset.train_test_split(test_size=0.5, shuffle=False) # Train/Test Ratio = 1132/1132
-        return (temp_dataset['train'], temp_dataset['test'])
-    elif dataset_name=='ag_news':
-        temp_dataset = load_dataset(dataset_name)['test']
-        temp_dataset = temp_dataset.train_test_split(test_size=0.1, shuffle=False) # Train/Test Ratio = 1132/1132
-        return (temp_dataset['train'], temp_dataset['test'])
+    data = load_data("data/emotion_10k_4.json")
+    return data[:len(data)//2], data[len(data)//2:]
+
 
 def entropy_calculation(generate_scores):
     logits = torch.stack(generate_scores, dim=1)
@@ -36,10 +32,10 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
             examples.append(dataset[random_index])
     elif sampling_strategy == 'class':
         label_to_texts = {}
-        for text, label in zip(dataset['sentence'], dataset['label']):
+        for text, label, context, choices in zip(dataset['question'], dataset['answer'], dataset['context'], dataset['choices']):
             if label not in label_to_texts:
                 label_to_texts[label] = []
-            label_to_texts[label].append(text)
+            label_to_texts[label].append({'text':text, 'context':context, 'choices':choices})
         # Randomly select one text from each label
         examples = []
         # Randomly select
@@ -49,8 +45,8 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
             sampled_texts = random.sample(texts, k_per_class)
             for text in sampled_texts:
                 examples.append({
-                    'sentence': text,
-                    'label': label
+                    'answer': label,
+                    **text
                 })
     # Construct Prompt from sampled demonstrations
     '''
@@ -59,16 +55,26 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
         temp_msg = """### Example {}\nSentence: "{}"\nCategory: {}\n\n""".format(i, x['sentence'], x['label'])
         prompts += temp_msg
     '''
-    prompts = PROMPT_TEMPLATE_1
-    for i, x in enumerate(examples):
-        temp_msg = """Sentence: "{}" Category: {}\n""".format(x['sentence'], x['label'])
-        prompts = temp_msg + prompts
+    prompts = "Below are some examples of multiple-choice questions about sentiment classification. For each question, the answer is the option that accurately follows the sentiment of the conversation.\n\n"
+    for example in examples:
+        temp_msg = "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+        for k, v in example["choices"].items():
+          temp_msg += k + ". " + str(v) + "\n"
+        temp_msg += "Answer:"
+        temp_msg += " " + example["answer"] + "\n"   
+        print(temp_msg)
+        prompts = prompts + temp_msg
+
     return prompts
 
 
-def create_prompt(sentence: str, demonstrations: str) -> str:
+def create_prompt(example, demonstrations: str) -> str:
     # return demonstrations + "### Test\nWhat is the sentiment of the following sentence? Choose from [0: negative; 1: neutral, 2: positive].\n" + "Sentence: \"{}\"\nCategory:".format(sentence)
-    return demonstrations + "Sentence: \"{}\" Category:".format(sentence)
+    temp_msg = "\nNow make your best effort and select the correct answer for the following question. You only need to output the option.\n\n" + "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+    for k, v in example["choices"].items():
+      temp_msg += k + ". " + str(v) + "\n"
+
+    return demonstrations + temp_msg
 
 
 def answer_generation(model, tokenizer, prompt, decoding_method=None):

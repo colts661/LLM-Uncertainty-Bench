@@ -9,6 +9,7 @@ from collections import Counter
 import pickle, re, os, time, random
 import json
 import argparse
+from utils import get_data, uncertainty_calculation, token_uncertainty_calculation_new, answer_extraction
 
 parser = argparse.ArgumentParser()
 
@@ -38,6 +39,9 @@ def main(model, tokenizer, prompts, training_data, args):
                                                    args.decoding_strategy, args.num_demos,
                                                    args.num_demos_per_class, args.sampling_strategy, 
                                                    args.iter_demos)
+        torch.save('au-eu-emotion-preds', preds)
+        torch.save('au-eu-emotion-preds', preds)
+
         AU, EU = token_uncertainty_calculation_new(preds, entropies)
         print("AU: {}\tEU: {}\tAU_new: {}\tEU_new: {}".format(AU, EU, AU_new, EU_new))
         pred = answer_extraction(preds)
@@ -107,8 +111,8 @@ if __name__ == '__main__':
     
     training_data, test_data = get_data(dataset_name='dair-ai/emotion')
     
-    prompts = [i['text'] for i in test_data]
-    labels = [i['label'] for i in test_data]
+    prompts = [i for i in test_data]
+    labels = [i['answer'] for i in test_data]
     print("Done! Loaded Data")
 
     if not args.resume_from:
