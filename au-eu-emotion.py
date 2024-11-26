@@ -99,14 +99,13 @@ if __name__ == '__main__':
     # Loading Model
     model_path = '{}'.format(args.model)
     model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", fp16=True, trust_remote_code=True)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     print("Done! Loaded Model: {}".format(args.model))
 
     # Loading Data
     # training_data, test_data = get_data()
     
-    _, test_data = get_data()
-    training_data, _ = get_data(dataset_name='glue')
+    training_data, test_data = get_data(dataset_name='dair-ai/emotion')
     
     prompts = [i['text'] for i in test_data]
     labels = [i['label'] for i in test_data]
