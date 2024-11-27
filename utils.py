@@ -67,7 +67,7 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
 
 def create_prompt(example, demonstrations: str) -> str:
     # return demonstrations + "### Test\nWhat is the sentiment of the following sentence? Choose from [0: negative; 1: neutral, 2: positive].\n" + "Sentence: \"{}\"\nCategory:".format(sentence)
-    temp_msg = "\nNow make your best effort and select the correct answer for the following question. You only need to output the option.\n\n" + "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+    temp_msg = "\nNow make your best effort and select the correct answer for the following question. You only need to output the option (eg. A) WITHOUT any additional information. \n\n" + "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
     for k, v in example["choices"].items():
       temp_msg += k + ". " + str(v) + "\n"
 
@@ -102,6 +102,8 @@ def answer_generation(model, tokenizer, prompt, decoding_method=None):
     #     temp_answer = (Counter(temp_answer).most_common())[0][0]
     # else:
     #     temp_answer = None
+    print(temp_answer, entropy)
+    return 
     return temp_answer, entropy
 
 

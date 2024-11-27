@@ -1,4 +1,4 @@
-# python sources/emotion.py --model 70b --num_demos_per_class 1 --num_demos 4 --sampling_strategy "class" --iter_demos 4 --load8bits "False"
+# python sources/emotion.py --model Qwen-1_8B --resume_from --pause_after 
 
 from datasets import load_dataset
 import pandas as pd
@@ -94,7 +94,9 @@ if __name__ == '__main__':
     parser.add_argument('--iter_demos', type=int, default=4)
     parser.add_argument('--load8bits', default=False, help='load model with 8 bits')
     parser.add_argument('--current_time', type=str, default=time.time())
-    parser.add_argument('--resume_from', type=int)
+    parser.add_argument('--resume_from', type=int, required=True)
+    parser.add_argument('--pause_after', type=int, required=True)
+
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -114,12 +116,9 @@ if __name__ == '__main__':
     labels = [i['answer'] for i in test_data]
     print("Done! Loaded Data")
 
-    if not args.resume_from:
-        data = main(model, tokenizer, prompts, training_data, args)
-    else:
-        data = main(model, tokenizer, prompts[args.resume_from + 1:], training_data, args)
+    
+    data = main(model, tokenizer, prompts[args.resume_from:args.pause_after+1], training_data, args)
     
     data = pd.DataFrame(data)
-    data.to_json('{}/{}_emotion_{}.json'.format(int(args.current_time), 
-                args.model, args.sampling_strategy), orient="records")
+    data.to_json('{}_to_{}/{}_emotion_{}.json'.format(args.  args.model, args.sampling_strategy), orient="records")
     # post_processing(data, args.save_path, args.current_time, args.model)
