@@ -16,7 +16,7 @@ def load_data(data_file):
 
 def get_data(dataset_name='dair-ai/emotion'):
     data = load_data("data/emotion_10k_4.json")
-    return data[:len(data)//2], data[len(data)//2:]
+    return data[:-len(data)//5], data[-len(data)//5:]
 
 
 def entropy_calculation(generate_scores):
