@@ -102,8 +102,6 @@ def answer_generation(model, tokenizer, prompt, decoding_method=None):
     #     temp_answer = (Counter(temp_answer).most_common())[0][0]
     # else:
     #     temp_answer = None
-    print(temp_answer, entropy)
-    return 
     return temp_answer, entropy
 
 
@@ -206,6 +204,7 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
                 prob_demo[ord(answer)-ord('A')] += total[i][j]
         prob_demos.append(torch.from_numpy(prob_demo))
     prob_demos = torch.stack(prob_demos)
+    print(prob_demos)
     # Total Uncertainty
     # TU = torch.sum(prob_demos, dim=0).softmax(dim=0)
     # TU = -torch.sum(TU * torch.log(TU)).item()
