@@ -9,6 +9,7 @@ from collections import Counter
 import pickle, re, os, time, random
 import json
 import argparse
+from tqdm import tqdm
 from utils import get_data, uncertainty_calculation, token_uncertainty_calculation_new, answer_extraction
 
 parser = argparse.ArgumentParser()
@@ -34,22 +35,20 @@ def main(model, tokenizer, prompts, training_data, args):
         json.dump(args.__dict__, f, indent=2)
     # Append to the saved path
     data = []
-    for index, prompt in enumerate(prompts):
+    for index, prompt in tqdm(enumerate(prompts)):
         preds, entropies = uncertainty_calculation(model, tokenizer, prompt, training_data,
                                                    args.decoding_strategy, args.num_demos,
                                                    args.num_demos_per_class, args.sampling_strategy, 
                                                    args.iter_demos)
-        torch.save(preds, 'au-eu-emotion-preds')
-        torch.save(entropies, 'au-eu-emotion-entropies')
 
-        AU, EU = token_uncertainty_calculation_new(preds, entropies)
+        AU, EU = token_uncertainty_calculation_new(preds, entropies, num_classes=6)
         print("AU: {}\tEU: {}\tAU_new: \tEU_new: ".format(AU, EU))
         pred = answer_extraction(preds)
         try:
             pred = Counter(pred).most_common()[0][0]
         except:
             pred = None
-        save_res = {"Question": prompt, "Label": labels[index], "Predicted_Label": pred, "AU": AU, "EU_new": EU}
+        save_res = {"Question": prompt, "Label": labels[index], "Predicted_Label": pred, "AU": AU, "EU": EU}
         
         data.append(save_res)
     return data

@@ -62,8 +62,6 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
         temp_msg += " " + example["answer"] + "\n"   
         prompts = prompts + temp_msg
     
-    print(prompts)
-
     return prompts
 
 
@@ -125,7 +123,6 @@ def uncertainty_calculation(model, tokenizer, prompt, training_data, decoding_st
         test_prompt = tokenizer(create_prompt(prompt, demonstrations), return_tensors="pt").to("cuda")
         temp_answers, temp_entropies = [], []
         for strategy in [decoding_strategies]:
-            print("Calculating outputs using strategy ", strategy)
             output = answer_generation(model, tokenizer, test_prompt, decoding_method=strategy)
             temp_answers.append(output[0])
             temp_entropies.append(output[1])
@@ -138,7 +135,7 @@ def uncertainty_calculation(model, tokenizer, prompt, training_data, decoding_st
 
 def find_option_idx(lst):
     for idx, item in enumerate(lst):
-        if item in ["A","B","C","D","E","F"]:
+        if item.strip() in ["A","B","C","D","E","F"]:
             return idx
     return None
 
@@ -201,9 +198,10 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
     for i in range(len(total_answers)):
         prob_demo = np.zeros(num_classes)
         for j in range(len(total_answers[0])):
+            answer = total_answers[i][j].strip()
             #Jerry: Changed answer from char to int (org paper used 0-5 i think, Conf Pred uses A-F)
-            if total_answers[i][j] and  ord('A')<=ord(total_answers[i][j]) and ord(total_answers[i][j]) <= ord('F'):
-                prob_demo[ord(total_answers[i][j])-ord('A')] += total[i][j]
+            if answer and  ord('A')<=ord(answer) and ord(answer) <= ord('F'):
+                prob_demo[ord(answer)-ord('A')] += total[i][j]
         prob_demos.append(torch.from_numpy(prob_demo))
     prob_demos = torch.stack(prob_demos)
     # Total Uncertainty
@@ -226,7 +224,7 @@ def answer_extraction(preds):
     answers = []
     for i in range(len(preds)):
         for j in range(len(preds[i][0])):
-            res = re.findall(r'\d+\.\d+|\d+', ''.join(preds[i][0][j]))
+            res = re.findall(r'Answer: [A-E]', ''.join(preds[i][0][j]))
             if res:
-                answers.append(int(float(res[0])))
+                answers.append(res[0])
     return answers
