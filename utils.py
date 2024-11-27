@@ -201,8 +201,9 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
     for i in range(len(total_answers)):
         prob_demo = np.zeros(num_classes)
         for j in range(len(total_answers[0])):
-            if total_answers[i][j] and int(total_answers[i][j]) < num_classes:
-                prob_demo[int(total_answers[i][j])] += total[i][j]
+            #Jerry: Changed answer from char to int (org paper used 0-5 i think, Conf Pred uses A-F)
+            if total_answers[i][j] and  ord('A')<=ord(total_answers[i][j]) and ord(total_answers[i][j]) <= ord('F'):
+                prob_demo[ord(total_answers[i][j])-ord('A')] += total[i][j]
         prob_demos.append(torch.from_numpy(prob_demo))
     prob_demos = torch.stack(prob_demos)
     # Total Uncertainty
