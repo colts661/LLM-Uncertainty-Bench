@@ -43,7 +43,7 @@ def main(model, tokenizer, prompts, training_data, args):
         torch.save(entropies, 'au-eu-emotion-entropies')
 
         AU, EU = token_uncertainty_calculation_new(preds, entropies)
-        print("AU: {}\tEU: {}\tAU_new: {}\tEU_new: {}".format(AU, EU))
+        print("AU: {}\tEU: {}\tAU_new: \tEU_new: ".format(AU, EU))
         pred = answer_extraction(preds)
         try:
             pred = Counter(pred).most_common()[0][0]
