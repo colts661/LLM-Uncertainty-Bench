@@ -120,5 +120,5 @@ if __name__ == '__main__':
     data = main(model, tokenizer, prompts[args.resume_from:args.pause_after+1], training_data, args)
     
     data = pd.DataFrame(data)
-    data.to_json('{}_to_{}/{}_emotion_{}.json'.format(args.  args.model, args.sampling_strategy), orient="records")
+    data.to_json('au-eu-outputs/data_{}_to_{}_{}_emotion_{}.json'.format(args.resume_from, args.pause_after,  args.model, args.sampling_strategy), orient="records")
     # post_processing(data, args.save_path, args.current_time, args.model)
