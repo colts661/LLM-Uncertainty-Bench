@@ -32,22 +32,20 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
             examples.append(dataset[random_index])
     elif sampling_strategy == 'class':
         label_to_texts = {}
-        for text, label, context, choices in zip(dataset['question'], dataset['answer'], dataset['context'], dataset['choices']):
-            if label not in label_to_texts:
-                label_to_texts[label] = []
-            label_to_texts[label].append({'text':text, 'context':context, 'choices':choices})
+        for datum in dataset:
+          label = datum['answer']
+          if label not in label_to_texts:
+              label_to_texts[label] = []
+          label_to_texts[label].append(datum)
         # Randomly select one text from each label
         examples = []
         # Randomly select
-        for label, texts in label_to_texts.items():
-            if len(texts) < k_per_class:
+        for label, data in label_to_texts.items():
+            if len(data) < k_per_class:
                 raise ValueError(f"Label {label} has fewer than {k_per_class} texts.")
-            sampled_texts = random.sample(texts, k_per_class)
-            for text in sampled_texts:
-                examples.append({
-                    'answer': label,
-                    **text
-                })
+            sampled_data = random.sample(data, k_per_class)
+            for datum in sampled_data:
+                examples.append(datum)
     # Construct Prompt from sampled demonstrations
     '''
     prompts = PROMPT_TEMPLATE
@@ -62,8 +60,9 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
           temp_msg += k + ". " + str(v) + "\n"
         temp_msg += "Answer:"
         temp_msg += " " + example["answer"] + "\n"   
-        print(temp_msg)
         prompts = prompts + temp_msg
+    
+    print(prompts)
 
     return prompts
 
@@ -123,9 +122,10 @@ def uncertainty_calculation(model, tokenizer, prompt, training_data, decoding_st
     answers, entropies = [], []
     for _ in range(demo_iter):
         demonstrations = create_demonstrations(training_data, demo_num, demo_per_class, sampling_strategy)
-        test_prompt = tokenizer(create_prompt(prompt, demonstrations), return_tensors="pt")
+        test_prompt = tokenizer(create_prompt(prompt, demonstrations), return_tensors="pt").to("cuda")
         temp_answers, temp_entropies = [], []
         for strategy in [decoding_strategies]:
+            print("Calculating outputs using strategy ", strategy)
             output = answer_generation(model, tokenizer, test_prompt, decoding_method=strategy)
             temp_answers.append(output[0])
             temp_entropies.append(output[1])
@@ -136,9 +136,9 @@ def uncertainty_calculation(model, tokenizer, prompt, training_data, decoding_st
     return answers, entropies
 
 
-def find_first_number_index(lst):
+def find_option_idx(lst):
     for idx, item in enumerate(lst):
-        if item.isdigit():
+        if item in ["A","B","C","D","E","F"]:
             return idx
     return None
 
@@ -150,7 +150,7 @@ def token_uncertainty_calculation(preds, entropies):
         _temp_token_logits = []
         _answer_token = []
         for j in range(len(preds[i][0])):
-            token_idx = find_first_number_index(preds[i][0][j])
+            token_idx = find_option_idx(preds[i][0][j])
             if token_idx:
                 _temp_token_logits.append(entropies[i][0][j][token_idx])
                 _answer_token.append(preds[i][0][j][token_idx])
@@ -183,7 +183,7 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
         _temp_token_logits = []
         _answer_token = []
         for j in range(len(preds[i][0])):
-            token_idx = find_first_number_index(preds[i][0][j])
+            token_idx = find_option_idx(preds[i][0][j])
             if token_idx:
                 _temp_token_logits.append(entropies[i][0][j][token_idx])
                 _answer_token.append(preds[i][0][j][token_idx])

@@ -39,11 +39,11 @@ def main(model, tokenizer, prompts, training_data, args):
                                                    args.decoding_strategy, args.num_demos,
                                                    args.num_demos_per_class, args.sampling_strategy, 
                                                    args.iter_demos)
-        torch.save('au-eu-emotion-preds', preds)
-        torch.save('au-eu-emotion-preds', preds)
+        torch.save(preds, 'au-eu-emotion-preds')
+        torch.save(entropies, 'au-eu-emotion-entropies')
 
         AU, EU = token_uncertainty_calculation_new(preds, entropies)
-        print("AU: {}\tEU: {}\tAU_new: {}\tEU_new: {}".format(AU, EU, AU_new, EU_new))
+        print("AU: {}\tEU: {}\tAU_new: {}\tEU_new: {}".format(AU, EU))
         pred = answer_extraction(preds)
         try:
             pred = Counter(pred).most_common()[0][0]
@@ -80,12 +80,12 @@ def post_processing(data, save_path, epochtime, model):
     data['EU_new'] = EU_new
     data['Preds'] = preds
     data = data.drop(columns=['Predicted_Label', 'Entropies'])
-    data.to_json('./LLM_UQ/results/' + '{}/{}_sentiment_processed.json'.format(int(epochtime), model),
+    data.to_json(save_path + '{}/{}_sentiment_processed.json'.format(int(epochtime), model),
                  orient="records")
 
 
 if __name__ == '__main__':
-    parser.add_argument('--save_path', type=str, default='./LLM_UQ/results/')
+    parser.add_argument('--save_path', type=str, default='results/')
     parser.add_argument('--model', type=str, default='7b')
     parser.add_argument('--num_demos', type=int, default=4)
     parser.add_argument('--num_demos_per_class', type=int, default=1)
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     # Loading Model
     model_path = '{}'.format(args.model)
     model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", fp16=True, trust_remote_code=True)
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_path,  device_map="auto", trust_remote_code=True)
     print("Done! Loaded Model: {}".format(args.model))
 
     # Loading Data
