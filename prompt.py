@@ -5,7 +5,8 @@ task_zero_prompt = '''
 "HellaSwag": "The following is a multiple-choice question about commonsense natural language inference. You are given a context and you should choose the most likely follow-up. You only need to output the option.\n\n",
 "CosmosQA": "The following is a multiple-choice question about reading comprehension. You should answer the question based on the given context and you can use commonsense reasoning when necessary. You only need to output the option.\n\n",
 "Halu-OpenDialKG": "The following is a multiple-choice question about dialogue response selection. You are given a dialogue history and you should select the best and correct response without hallucination and non-factual information. You only need to output the option.\n\n",
-"Halu-CNN/DailyMail": "The following is a multiple-choice question about document summarization. You are given a document and you should select the best and correct summary without hallucination and non-factual information. You only need to output the option.\n\n"
+"Halu-CNN/DailyMail": "The following is a multiple-choice question about document summarization. You are given a document and you should select the best and correct summary without hallucination and non-factual information. You only need to output the option.\n\n",
+"Emotion": "Below are some examples of multiple-choice questions about sentiment classification. You are given a document and you should select the best and correct sentiment without hallucination and non-factual information. You only need to output the option.\n\n"
 }
 '''
 
@@ -30,6 +31,7 @@ task_cot_prompt = '''
 "HellaSwag": "The following is a multiple-choice question about commonsense natural language inference. You are given a context and you should choose the most likely follow-up. Please reason step-by-step and select the correct answer. You only need to output the option.\n\n",
 "CosmosQA": "The following is a multiple-choice question about reading comprehension. You should answer the question based on the given context and you can use commonsense reasoning when necessary. Please reason step-by-step and select the correct answer. You only need to output the option.\n\n",
 "Halu-OpenDialKG": "The following is a multiple-choice question about dialogue response selection. You are given a dialogue history and you should select the best and correct response without hallucination and non-factual information. Please reason step-by-step and select the correct answer. You only need to output the option.\n\n",
-"Halu-CNN/DailyMail": "The following is a multiple-choice question about document summarization. You are given a document and you should select the best and correct summary without hallucination and non-factual information. Please reason step-by-step and select the correct answer. You only need to output the option.\n\n"
+"Halu-CNN/DailyMail": "The following is a multiple-choice question about document summarization. You are given a document and you should select the best and correct summary without hallucination and non-factual information. Please reason step-by-step and select the correct answer. You only need to output the option.\n\n",
+"Emotion": "The following is a multiple-choice question about sentiment analysis. You are given a document and you should select the best and correct sentiment without hallucination and non-factual information. Please reason step-by-step and select the correct answer. You only need to output the option.\n\n"
 }
 '''
