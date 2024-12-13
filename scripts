@@ -1,0 +1,27 @@
+Run AU/EU
+
+python sources/emotion.py --model Qwen-1_8B --resume_from 100 --pause_after 200 --data_path data/emotion_10k.json
+
+
+Generate Logits for Conf Pred
+
+python generate_logits.py \
+  --model=Qwen/Qwen-1_8B \
+  --data_path=data \
+  --file=emotion_10k.json \
+  --prompt_method=task \
+  --output_dir=outputs \
+  --few_shot=1
+  
+  
+Generate CP values 
+
+python uncertainty_quantification_via_cp.py \
+  --model=Qwen-1_8B \
+  --raw_data_dir=data \
+  --logits_data_dir=outputs_base \
+  --cal_ratio=0.5 \
+  --alpha=0.1
+  
+ 
+
