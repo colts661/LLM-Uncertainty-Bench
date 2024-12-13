@@ -85,6 +85,7 @@ def post_processing(data, save_path, epochtime, model):
 
 if __name__ == '__main__':
     parser.add_argument('--save_path', type=str, default='results/')
+    parser.add_argument('--data_path', type=str, default='data/emotion_10k_4.json')
     parser.add_argument('--model', type=str, default='7b')
     parser.add_argument('--num_demos', type=int, default=4)
     parser.add_argument('--num_demos_per_class', type=int, default=1)
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     # Loading Data
     # training_data, test_data = get_data()
     
-    training_data, test_data = get_data(dataset_name='dair-ai/emotion')
+    training_data, test_data = get_data(args.data_path)
     
     prompts = [i for i in test_data]
     labels = [i['answer'] for i in test_data]

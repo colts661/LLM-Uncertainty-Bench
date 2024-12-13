@@ -1,0 +1,14 @@
+{
+  "save_path": "results/",
+  "data_path": "data/cosmosqa_10k.json",
+  "model": "Qwen/Qwen-1_8B",
+  "num_demos": 4,
+  "num_demos_per_class": 1,
+  "sampling_strategy": "class",
+  "decoding_strategy": "beam_search",
+  "iter_demos": 4,
+  "load8bits": false,
+  "current_time": 1734063978.7333663,
+  "resume_from": 0,
+  "pause_after": 5
+}

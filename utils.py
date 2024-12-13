@@ -14,8 +14,8 @@ def load_data(data_file):
     return data
 
 
-def get_data(dataset_name='dair-ai/emotion'):
-    data = load_data("data/emotion_10k_4.json")
+def get_data(dataset_path):
+    data = load_data(dataset_path)
     return data[:-len(data)//5], data[-len(data)//5:]
 
 
