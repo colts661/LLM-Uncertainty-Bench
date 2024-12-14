@@ -1,16 +1,13 @@
-# python sources/emotion.py --model Qwen-1_8B --resume_from --pause_after 
-
-from datasets import load_dataset
 import pandas as pd
 import numpy as np
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from collections import Counter
-import pickle, re, os, time, random
+import os, time
 import json
 import argparse
 from tqdm import tqdm
-from utils import get_data, uncertainty_calculation, token_uncertainty_calculation_new, answer_extraction
+from au_eu_utils import get_data, uncertainty_calculation, token_uncertainty_calculation_new, answer_extraction
 
 parser = argparse.ArgumentParser()
 
@@ -54,38 +51,18 @@ def main(model, tokenizer, prompts, training_data, args):
     return data
 
 
-def post_processing(data, save_path, epochtime, model):
-    if not data:
-        data = []
-        with open(save_path + '{}/{}_sentiment.pkl'.format(int(epochtime), model), 'rb') as fr:
-            try:
-                while True:
-                    data.append(pickle.load(fr))
-            except EOFError:
-                pass
-    # Create Dataframe
-    data = pd.DataFrame(data)
-    AU, EU, AU_new, EU_new, preds = [], [], [], [], []
-    answers, entropies = list(data['Predicted_Label']), list(data['Entropies'])
-    for i in range(len(answers)):
-        ale_new, epi_new = token_uncertainty_calculation_new(answers[i], entropies[i])
-        pred = answer_extraction(answers[i])
-        preds.append(Counter(pred).most_common()[0][0])
-
-        AU_new.append(ale_new)
-        EU_new.append(epi_new)
-
-    data['AU_new'] = AU_new
-    data['EU_new'] = EU_new
-    data['Preds'] = preds
-    data = data.drop(columns=['Predicted_Label', 'Entropies'])
-    data.to_json(save_path + '{}/{}_sentiment_processed.json'.format(int(epochtime), model),
-                 orient="records")
+def format_json(df):
+    result = df[['AU', 'EU']].to_dict(orient='records')
+    for i, record in enumerate(result):
+        record['Id'] = i
+        record['Entropy'] = record['AU'] + record['EU']
+    return result
 
 
 if __name__ == '__main__':
     parser.add_argument('--save_path', type=str, default='results/')
-    parser.add_argument('--data_path', type=str, default='data/emotion_10k_4.json')
+    parser.add_argument('--data_path', type=str, default="data")
+    parser.add_argument('--file', type=str, default="xxx.json", help="Specify which dataset to use")
     parser.add_argument('--model', type=str, default='7b')
     parser.add_argument('--num_demos', type=int, default=4)
     parser.add_argument('--num_demos_per_class', type=int, default=1)
@@ -95,8 +72,7 @@ if __name__ == '__main__':
     parser.add_argument('--iter_demos', type=int, default=4)
     parser.add_argument('--load8bits', default=False, help='load model with 8 bits')
     parser.add_argument('--current_time', type=str, default=time.time())
-    parser.add_argument('--resume_from', type=int, required=True)
-    parser.add_argument('--pause_after', type=int, required=True)
+    parser.add_argument('--num_data', type=int, required=True)
 
     args = parser.parse_args()
 
@@ -109,17 +85,20 @@ if __name__ == '__main__':
     print("Done! Loaded Model: {}".format(args.model))
 
     # Loading Data
-    # training_data, test_data = get_data()
-    
-    training_data, test_data = get_data(args.data_path)
+    training_data, test_data = get_data(f"{args.data_path}/{args.file}")
     
     prompts = [i for i in test_data]
     labels = [i['answer'] for i in test_data]
     print("Done! Loaded Data")
 
+    # perform AU/EU Decomposition
+    data = pd.DataFrame(main(model, tokenizer, prompts[:args.num_data], training_data, args))
     
-    data = main(model, tokenizer, prompts[args.resume_from:args.pause_after+1], training_data, args)
-    
+    # format to output
     data = pd.DataFrame(data)
-    data.to_json('au-eu-outputs/data_{}_to_{}_{}_emotion_{}.json'.format(args.resume_from, args.pause_after,  args.model.split('/')[-1], args.sampling_strategy), orient="records")
-    # post_processing(data, args.save_path, args.current_time, args.model)
+    filepath = 'au-eu-outputs/{}_{}_au_eu.json'
+    with open(filepath.format(
+        args.model.split('/')[-1],
+        args.file.split('.')[0],
+    ), 'w') as f:
+        json.dump(format_json(data), f)

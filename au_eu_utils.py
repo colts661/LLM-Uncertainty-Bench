@@ -1,12 +1,9 @@
 import pandas as pd
 import numpy as np
-from transformers import AutoTokenizer, LlamaForCausalLM
-from datasets import load_dataset
 import torch
 from collections import Counter
-import pickle, re, os, time, random
+import re, random
 import json
-import argparse
 
 
 def load_data(data_file):
@@ -205,13 +202,12 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
                     prob_demo[ord(answer)-ord('A')] += total[i][j]
         prob_demos.append(torch.from_numpy(prob_demo))
     prob_demos = torch.stack(prob_demos)
-    print(prob_demos)
+
     # Total Uncertainty
-    # TU = torch.sum(prob_demos, dim=0).softmax(dim=0)
-    # TU = -torch.sum(TU * torch.log(TU)).item()
     TU = (torch.sum(prob_demos, dim=0) + 10 ** -7)
     TU = TU / torch.sum(TU)
     TU = -torch.sum(TU * torch.log(TU)).item()
+    
     # Aleatoric Uncertainty
     AU = prob_demos + 10 ** -7
     uncertainty_list_AU = []
