@@ -1,27 +1,20 @@
 import pandas as pd
 import numpy as np
-from transformers import AutoTokenizer, LlamaForCausalLM
 import torch
 from collections import Counter
-import pickle, re, os, time, random
+import re, random
 import json
-import argparse
 
 
-def get_data(dataset_name='dair-ai/emotion'):
-    if dataset_name=='dair-ai/emotion':
-        return (load_dataset(dataset_name)['train'], load_dataset(dataset_name)['test'])
-    elif dataset_name=='glue':
-        temp_dataset = load_dataset(dataset_name, 'cola')
-        return (temp_dataset['train'], temp_dataset['validation'])
-    elif dataset_name=='financial_phrasebank':
-        temp_dataset = load_dataset(dataset_name, 'sentences_allagree')['train']
-        temp_dataset = temp_dataset.train_test_split(test_size=0.5, shuffle=False) # Train/Test Ratio = 1132/1132
-        return (temp_dataset['train'], temp_dataset['test'])
-    elif dataset_name=='ag_news':
-        temp_dataset = load_dataset(dataset_name)['test']
-        temp_dataset = temp_dataset.train_test_split(test_size=0.1, shuffle=False) # Train/Test Ratio = 1132/1132
-        return (temp_dataset['train'], temp_dataset['test'])
+def load_data(data_file):
+    data = json.load(open(data_file, "r"))
+    return data
+
+
+def get_data(dataset_path):
+    data = load_data(dataset_path)
+    return data[:-len(data)//5], data[-len(data)//5:]
+
 
 def entropy_calculation(generate_scores):
     logits = torch.stack(generate_scores, dim=1)
@@ -36,22 +29,20 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
             examples.append(dataset[random_index])
     elif sampling_strategy == 'class':
         label_to_texts = {}
-        for text, label in zip(dataset['sentence'], dataset['label']):
-            if label not in label_to_texts:
-                label_to_texts[label] = []
-            label_to_texts[label].append(text)
+        for datum in dataset:
+          label = datum['answer']
+          if label not in label_to_texts:
+              label_to_texts[label] = []
+          label_to_texts[label].append(datum)
         # Randomly select one text from each label
         examples = []
         # Randomly select
-        for label, texts in label_to_texts.items():
-            if len(texts) < k_per_class:
+        for label, data in label_to_texts.items():
+            if len(data) < k_per_class:
                 raise ValueError(f"Label {label} has fewer than {k_per_class} texts.")
-            sampled_texts = random.sample(texts, k_per_class)
-            for text in sampled_texts:
-                examples.append({
-                    'sentence': text,
-                    'label': label
-                })
+            sampled_data = random.sample(data, k_per_class)
+            for datum in sampled_data:
+                examples.append(datum)
     # Construct Prompt from sampled demonstrations
     '''
     prompts = PROMPT_TEMPLATE
@@ -59,16 +50,25 @@ def create_demonstrations(dataset, k=6, k_per_class=1, sampling_strategy='random
         temp_msg = """### Example {}\nSentence: "{}"\nCategory: {}\n\n""".format(i, x['sentence'], x['label'])
         prompts += temp_msg
     '''
-    prompts = PROMPT_TEMPLATE_1
-    for i, x in enumerate(examples):
-        temp_msg = """Sentence: "{}" Category: {}\n""".format(x['sentence'], x['label'])
-        prompts = temp_msg + prompts
+    prompts = "Below are some examples of multiple-choice questions about sentiment classification. For each question, the answer is the option that accurately follows the sentiment of the conversation.\n\n"
+    for example in examples:
+        temp_msg = "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+        for k, v in example["choices"].items():
+          temp_msg += k + ". " + str(v) + "\n"
+        temp_msg += "Answer:"
+        temp_msg += " " + example["answer"] + "\n"   
+        prompts = prompts + temp_msg
+    
     return prompts
 
 
-def create_prompt(sentence: str, demonstrations: str) -> str:
+def create_prompt(example, demonstrations: str) -> str:
     # return demonstrations + "### Test\nWhat is the sentiment of the following sentence? Choose from [0: negative; 1: neutral, 2: positive].\n" + "Sentence: \"{}\"\nCategory:".format(sentence)
-    return demonstrations + "Sentence: \"{}\" Category:".format(sentence)
+    temp_msg = "\nNow make your best effort and select the correct answer for the following question. You only need to output the option (eg. A) WITHOUT any additional information. \n\n" + "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+    for k, v in example["choices"].items():
+      temp_msg += k + ". " + str(v) + "\n"
+
+    return demonstrations + temp_msg
 
 
 def answer_generation(model, tokenizer, prompt, decoding_method=None):
@@ -117,7 +117,7 @@ def uncertainty_calculation(model, tokenizer, prompt, training_data, decoding_st
     answers, entropies = [], []
     for _ in range(demo_iter):
         demonstrations = create_demonstrations(training_data, demo_num, demo_per_class, sampling_strategy)
-        test_prompt = tokenizer(create_prompt(prompt, demonstrations), return_tensors="pt")
+        test_prompt = tokenizer(create_prompt(prompt, demonstrations), return_tensors="pt").to("cuda")
         temp_answers, temp_entropies = [], []
         for strategy in [decoding_strategies]:
             output = answer_generation(model, tokenizer, test_prompt, decoding_method=strategy)
@@ -130,9 +130,9 @@ def uncertainty_calculation(model, tokenizer, prompt, training_data, decoding_st
     return answers, entropies
 
 
-def find_first_number_index(lst):
+def find_option_idx(lst):
     for idx, item in enumerate(lst):
-        if item.isdigit():
+        if item.strip() in ["A","B","C","D","E","F"]:
             return idx
     return None
 
@@ -144,7 +144,7 @@ def token_uncertainty_calculation(preds, entropies):
         _temp_token_logits = []
         _answer_token = []
         for j in range(len(preds[i][0])):
-            token_idx = find_first_number_index(preds[i][0][j])
+            token_idx = find_option_idx(preds[i][0][j])
             if token_idx:
                 _temp_token_logits.append(entropies[i][0][j][token_idx])
                 _answer_token.append(preds[i][0][j][token_idx])
@@ -177,7 +177,7 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
         _temp_token_logits = []
         _answer_token = []
         for j in range(len(preds[i][0])):
-            token_idx = find_first_number_index(preds[i][0][j])
+            token_idx = find_option_idx(preds[i][0][j])
             if token_idx:
                 _temp_token_logits.append(entropies[i][0][j][token_idx])
                 _answer_token.append(preds[i][0][j][token_idx])
@@ -195,16 +195,19 @@ def token_uncertainty_calculation_new(preds, entropies, num_classes=2):
     for i in range(len(total_answers)):
         prob_demo = np.zeros(num_classes)
         for j in range(len(total_answers[0])):
-            if total_answers[i][j] and int(total_answers[i][j]) < num_classes:
-                prob_demo[int(total_answers[i][j])] += total[i][j]
+            if total_answers[i][j] is not None:
+                answer = total_answers[i][j].strip()
+                #Jerry: Changed answer from char to int (org paper used 0-5 i think, Conf Pred uses A-F)
+                if answer and  ord('A')<=ord(answer) and ord(answer) <= ord('F'):
+                    prob_demo[ord(answer)-ord('A')] += total[i][j]
         prob_demos.append(torch.from_numpy(prob_demo))
     prob_demos = torch.stack(prob_demos)
+
     # Total Uncertainty
-    # TU = torch.sum(prob_demos, dim=0).softmax(dim=0)
-    # TU = -torch.sum(TU * torch.log(TU)).item()
     TU = (torch.sum(prob_demos, dim=0) + 10 ** -7)
     TU = TU / torch.sum(TU)
     TU = -torch.sum(TU * torch.log(TU)).item()
+    
     # Aleatoric Uncertainty
     AU = prob_demos + 10 ** -7
     uncertainty_list_AU = []
@@ -219,7 +222,7 @@ def answer_extraction(preds):
     answers = []
     for i in range(len(preds)):
         for j in range(len(preds[i][0])):
-            res = re.findall(r'\d+\.\d+|\d+', ''.join(preds[i][0][j]))
+            res = re.findall(r'Answer: [A-E]', ''.join(preds[i][0][j]))
             if res:
-                answers.append(int(float(res[0])))
+                answers.append(res[0])
     return answers

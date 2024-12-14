@@ -13,6 +13,7 @@ import prompt as pt
 
 few_shot_exp_ids = {
     "MMLU": [1, 3, 5, 7, 9],
+    "MMLU": [1, 3, 5, 7, 9],
     "HellaSwag": [1, 3, 5, 7, 9],
     "CosmosQA": [1, 3, 5, 7, 9],
     "Halu-OpenDialKG": [5, 7, 9],
