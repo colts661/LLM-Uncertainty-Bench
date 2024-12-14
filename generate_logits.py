@@ -83,10 +83,12 @@ def format_example(example, prompt, with_answer=False):
     # Document Summarization
     elif example["source"] == "Halu-CNN/DailyMail":
         prompt += "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
+    # Sentiment Analysis
     elif example["source"] == "Emotion":
     	prompt += "Document: " + example["context"] + "\n" + "Question: " + example["question"] + "\nChoices:\n"
     else:
         raise NotImplementedError("Not supported dataset.")
+
     for k, v in example["choices"].items():
         prompt += k + ". " + str(v) + "\n"
     prompt += "Answer:"
