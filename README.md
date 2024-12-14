@@ -10,13 +10,13 @@ In this project, we conducted a thorough analysis of the performance of large la
 
 ### Methods
 
-Compared to other methods, conformal prediction is model-agnostic, distribution-free, and an statistically rigorous estimation of uncertainty. The pipeline is showed below:
+Compared to other methods, conformal prediction is model-agnostic, distribution-free, and an statistically rigorous estimation of uncertainty. We adapted our code from [LLM-Uncertainty-Bench](https://github.com/smartyfh/LLM-Uncertainty-Bench). The pipeline is showed below:
 
 <p align="center">
   <img src="images/cp-diagram.png" width="90%" />
 </p>
 
-To compare across uncertainty scores and try to explain the sources of uncertainty, we utilized an entropy-based decomposition into Aleatoric Uncertainty (AU, data variations) and Epistemic Uncertainty (EU, model ambiguities). The framework is showed below:
+To compare across uncertainty scores and try to explain the sources of uncertainty, we utilized an entropy-based decomposition into Aleatoric Uncertainty (AU, data variations) and Epistemic Uncertainty (EU, model ambiguities). We adapted our code from [UQ_ICL](https://github.com/lingchen0331/UQ_ICL). The framework is showed below:
 
 <p align="center">
   <img src="images/aueu-diagram.png" width="90%" />
